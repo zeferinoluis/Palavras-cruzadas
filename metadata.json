@@ -1,0 +1,6 @@
+{
+  "name": "Palavras Cruzadas",
+  "description": "Jogo de palavras cruzadas Mente Ativa com níveis de dificuldade, gerador de novos puzzles e pesquisa de palavras online.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

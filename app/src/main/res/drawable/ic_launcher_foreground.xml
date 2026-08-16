@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Center group scaled to fit safe zone -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.8"
+        android:scaleY="0.8">
+        <!-- Tile Top-Left -->
+        <path
+            android:pathData="M30,30h22v22h-22z"
+            android:fillColor="#F8FAFC"
+            android:strokeColor="#CBD5E1"
+            android:strokeWidth="1.5" />
+        <!-- Tile Top-Right (Active Highlighted Amber) -->
+        <path
+            android:pathData="M56,30h22v22h-22z"
+            android:fillColor="#F59E0B"
+            android:strokeColor="#D97706"
+            android:strokeWidth="1.5" />
+        <!-- Tile Bottom-Left -->
+        <path
+            android:pathData="M30,56h22v22h-22z"
+            android:fillColor="#F8FAFC"
+            android:strokeColor="#CBD5E1"
+            android:strokeWidth="1.5" />
+        <!-- Tile Bottom-Right (Black blocked cell) -->
+        <path
+            android:pathData="M56,56h22v22h-22z"
+            android:fillColor="#1E293B"
+            android:strokeColor="#0F172A"
+            android:strokeWidth="1.5" />
+        <!-- Crossword Grid Pencil Line -->
+        <path
+            android:pathData="M78,25l5,-5c1.5,-1.5 4,-1.5 5.5,0l0,0c1.5,1.5 1.5,4 0,5.5l-5,5z M78,25l-12,12l-2,5l5,-2l12,-12"
+            android:fillColor="#E2E8F0"
+            android:strokeColor="#38BDF8"
+            android:strokeWidth="1.5" />
+    </group>
+</vector>
