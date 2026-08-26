@@ -13,6 +13,17 @@ class ExampleUnitTest {
         assertEquals("CESAR#AUGUSTO", CrosswordGenerator.normalizeForGrid("César Augusto"))
         assertEquals("NICOLAU#II", CrosswordGenerator.normalizeForGrid("Nicolau II"))
         assertEquals("VASCO#DA#GAMA", CrosswordGenerator.normalizeForGrid("Vasco da Gama"))
+        assertEquals("PINK#FLOYD", CrosswordGenerator.normalizeForGrid("Pink Floyd"))
+        assertEquals("AYRTON#SENNA", CrosswordGenerator.normalizeForGrid("Ayrton Senna"))
+    }
+
+    @Test
+    fun candidateWord_autoNormalizesMultiWords() {
+        val cand1 = CrosswordGenerator.CandidateWord(originalWord = "Baleia Azul", clue = "Maior animal")
+        assertEquals("BALEIA#AZUL", cand1.normalizedWord)
+
+        val cand2 = CrosswordGenerator.CandidateWord("Ayrton Senna", "AYRTONSENNA", "Piloto F1", "Desporto")
+        assertEquals("AYRTON#SENNA", cand2.normalizedWord)
     }
 
     @Test

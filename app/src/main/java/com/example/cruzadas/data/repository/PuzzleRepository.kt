@@ -25,8 +25,9 @@ class PuzzleRepository(
 
     suspend fun ensureInitialDataLoaded() {
         val words = dictionaryDao.getAllWords().first()
-        if (words.isEmpty() || words.none { it.category == "Geografia" } || words.none { it.category == "Entretenimento" } || words.none { it.category == "História" } || words.none { it.category == "Desporto e Lazer" }) {
-            dictionaryDao.insertWords(PrebuiltPuzzles.getInitialDictionaryWords())
+        val initialDict = PrebuiltPuzzles.getInitialDictionaryWords()
+        if (words.size < initialDict.size || words.none { it.category == "Geografia" } || words.none { it.category == "Entretenimento" } || words.none { it.category == "História" } || words.none { it.category == "Desporto e Lazer" }) {
+            dictionaryDao.insertWords(initialDict)
         }
 
         // Renew daily puzzles across all categories and difficulty levels
@@ -34,6 +35,15 @@ class PuzzleRepository(
 
         // Always ensure today's featured daily challenge exists
         ensureDailyChallengeForToday()
+    }
+
+    private fun hasUnseparatedMultiWords(wordsJson: String): Boolean {
+        val placements = CrosswordGenerator.wordPlacementAdapter.fromJson(wordsJson) ?: return false
+        return placements.any { p ->
+            val hasMultipleWords = p.displayWord.trim().contains(Regex("[\\s\\-_/.]+"))
+            val hasHash = p.word.contains('#')
+            hasMultipleWords && !hasHash
+        }
     }
 
     suspend fun renewDailyPuzzlesForAllThemes(forceRefresh: Boolean = false) {
@@ -46,14 +56,15 @@ class PuzzleRepository(
             val existing = puzzleDao.getPuzzleById(id)
 
             val isToday = existing != null && isSameCalendarDay(existing.createdAt, System.currentTimeMillis())
+            val hasOutdatedWords = existing != null && hasUnseparatedMultiWords(existing.wordsJson)
 
-            if (existing != null && isToday && !forceRefresh) {
-                // Today's puzzle for this theme and difficulty is already active
+            if (existing != null && isToday && !forceRefresh && !hasOutdatedWords) {
+                // Today's puzzle for this theme and difficulty is already active and up to date
                 continue
             }
 
             // Archive completed old puzzle if it exists from a previous date or before forced refresh
-            if (existing != null && existing.isCompleted) {
+            if (existing != null && existing.isCompleted && !hasOutdatedWords) {
                 val oldDateStr = sdf.format(Date(existing.createdAt))
                 val archivedId = "${id}_$oldDateStr"
                 val archivedPuzzle = existing.copy(id = archivedId)
@@ -93,12 +104,16 @@ class PuzzleRepository(
     private suspend fun getCandidatesForPuzzle(basePuzzle: Puzzle): List<CrosswordGenerator.CandidateWord> {
         val placements = CrosswordGenerator.wordPlacementAdapter.fromJson(basePuzzle.wordsJson) ?: emptyList()
         val baseCandidates = placements.map {
-            CrosswordGenerator.CandidateWord(it.displayWord, it.word, it.clue, basePuzzle.category)
+            CrosswordGenerator.CandidateWord(
+                originalWord = it.displayWord,
+                clue = it.clue,
+                category = basePuzzle.category
+            )
         }
 
         val dictWords = dictionaryDao.getAllWords().first()
             .filter { it.category.equals(basePuzzle.category, ignoreCase = true) || basePuzzle.category == "Geral" }
-            .map { CrosswordGenerator.CandidateWord(it.word, CrosswordGenerator.normalizeForGrid(it.word), it.definition, it.category) }
+            .map { CrosswordGenerator.CandidateWord(originalWord = it.word, clue = it.definition, category = it.category) }
 
         return (baseCandidates + dictWords).distinctBy { it.normalizedWord }
     }
@@ -114,7 +129,7 @@ class PuzzleRepository(
         val dailyId = "daily_$dateStr"
 
         val existing = puzzleDao.getPuzzleById(dailyId)
-        if (existing != null) {
+        if (existing != null && !hasUnseparatedMultiWords(existing.wordsJson)) {
             return existing
         }
 
@@ -146,7 +161,7 @@ class PuzzleRepository(
         // Local pool matching theme
         val localWords = dictionaryDao.getAllWords().first()
             .filter { it.category.equals(theme, ignoreCase = true) || theme == "Geral" }
-            .map { CrosswordGenerator.CandidateWord(it.word, CrosswordGenerator.normalizeForGrid(it.word), it.definition, it.category) }
+            .map { CrosswordGenerator.CandidateWord(originalWord = it.word, clue = it.definition, category = it.category) }
 
         // Fetch candidates online via Gemini/Internal generator
         val onlineWords = GeminiDictionaryService.generateThematicWords(theme, difficulty, count = 14)

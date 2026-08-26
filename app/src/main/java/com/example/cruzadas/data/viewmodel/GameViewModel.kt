@@ -75,7 +75,15 @@ class GameViewModel(
         viewModelScope.launch {
             repository.ensureInitialDataLoaded()
             val puzzle = repository.getPuzzleById(puzzleId) ?: return@launch
-            val words = CrosswordGenerator.wordPlacementAdapter.fromJson(puzzle.wordsJson) ?: emptyList()
+            val rawWords = CrosswordGenerator.wordPlacementAdapter.fromJson(puzzle.wordsJson) ?: emptyList()
+            val words = rawWords.map { w ->
+                if (w.displayWord.trim().contains(Regex("[\\s\\-_/.]+")) && !w.word.contains('#')) {
+                    val normalized = CrosswordGenerator.normalizeForGrid(w.displayWord)
+                    if (normalized.isNotBlank()) w.copy(word = normalized) else w
+                } else {
+                    w
+                }
+            }
 
             // Construct grid mapping
             val gridMap = mutableMapOf<Pair<Int, Int>, BoardCell>()
@@ -95,11 +103,14 @@ class GameViewModel(
 
                     if (ch == '#' || ch == ' ') {
                         // Black cell separator (casa negra)
-                        gridMap[key] = BoardCell(
-                            x = cx,
-                            y = cy,
-                            isBlocked = true
-                        )
+                        val existing = gridMap[key]
+                        if (existing == null || existing.correctChar == ' ') {
+                            gridMap[key] = BoardCell(
+                                x = cx,
+                                y = cy,
+                                isBlocked = true
+                            )
+                        }
                     } else {
                         val existing = gridMap[key] ?: BoardCell(cx, cy, isBlocked = false)
 

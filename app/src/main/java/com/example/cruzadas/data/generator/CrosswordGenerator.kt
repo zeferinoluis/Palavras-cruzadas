@@ -33,10 +33,17 @@ object CrosswordGenerator {
 
     data class CandidateWord(
         val originalWord: String,
-        val normalizedWord: String = normalizeForGrid(originalWord),
         val clue: String = "",
         val category: String = "Geral"
-    )
+    ) {
+        val normalizedWord: String = normalizeForGrid(originalWord)
+
+        constructor(originalWord: String, normalizedWord: String, clue: String, category: String) : this(
+            originalWord = originalWord,
+            clue = clue,
+            category = category
+        )
+    }
 
     /**
      * Generates a crossword grid given a pool of candidate words and target dimensions.
